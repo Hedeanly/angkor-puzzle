@@ -35,7 +35,7 @@ export default function PuzzlePiece({ id, index, gridSize, imageUrl, isMobile, i
     position: "relative",
     boxShadow: isSelected ? "0 0 12px 4px rgba(250,204,21,0.7)" : undefined,
     transition: "box-shadow 0.2s, border 0.2s",
-    touchAction: "none",
+    touchAction: isMobile ? "auto" : "none",
     WebkitUserSelect: "none",
     WebkitTouchCallout: "none",
   };

@@ -57,7 +57,7 @@ export default function PuzzleBoard({
     backgroundColor: isOver ? "#1e3a5f" : "#1a1a2e",
     transition: "border 0.2s",
     cursor: isMobile ? (isCorrect ? "default" : "pointer") : isOccupied && !isCorrect ? "pointer" : "default",
-    touchAction: "none",
+    touchAction: isMobile ? "auto" : "none",
     WebkitUserSelect: "none",
   };
 
