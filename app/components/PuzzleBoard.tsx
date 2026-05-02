@@ -10,6 +10,9 @@ type Props = {
   imageUrl: string;
   isCorrect: boolean;
   onRetrieve: () => void;
+  isMobile: boolean;
+  hasSelectedPiece: boolean;
+  onTapSlot: () => void;
 };
 
 export default function PuzzleBoard({
@@ -20,12 +23,14 @@ export default function PuzzleBoard({
   imageUrl,
   isCorrect,
   onRetrieve,
+  isMobile,
+  hasSelectedPiece,
+  onTapSlot,
 }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id });
 
   const isOccupied = pieceValue !== null;
 
-  // Use the PIECE's index for background position, not the slot's index
   const pieceRow = pieceValue !== null ? Math.floor(pieceValue / gridSize) : 0;
   const pieceCol = pieceValue !== null ? pieceValue % gridSize : 0;
   const pieceSize = 100 / gridSize;
@@ -35,31 +40,46 @@ export default function PuzzleBoard({
     ? "#22c55e"
     : isOccupied
     ? "#ef4444"
+    : isMobile && hasSelectedPiece
+    ? "#facc15"
     : isOver
     ? "#60a5fa"
     : "#6b7280";
 
-  const borderStyle = isOccupied ? "solid" : "dashed";
-
-  const style = {
+  const style: React.CSSProperties = {
     width: "80px",
     height: "80px",
-    border: `2px ${borderStyle} ${borderColor}`,
+    border: `2px ${isOccupied ? "solid" : "dashed"} ${borderColor}`,
     borderRadius: "4px",
     backgroundImage: isOccupied ? `url(${imageUrl})` : undefined,
     backgroundSize: isOccupied ? `${gridSize * 100}%` : undefined,
     backgroundPosition: isOccupied ? bgPos : undefined,
     backgroundColor: isOver ? "#1e3a5f" : "#1a1a2e",
     transition: "border 0.2s",
-    cursor: isOccupied && !isCorrect ? "pointer" : "default",
+    cursor: isMobile ? (isCorrect ? "default" : "pointer") : isOccupied && !isCorrect ? "pointer" : "default",
+    touchAction: "none",
+    WebkitUserSelect: "none",
+  };
+
+  const handleClick = () => {
+    if (isCorrect) return;
+    if (isMobile) {
+      if (hasSelectedPiece) {
+        onTapSlot();
+      } else if (isOccupied) {
+        onRetrieve();
+      }
+    } else {
+      if (isOccupied) onRetrieve();
+    }
   };
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      onClick={isOccupied && !isCorrect ? onRetrieve : undefined}
-      title={isOccupied && !isCorrect ? "Click to retrieve piece" : undefined}
+      onClick={handleClick}
+      title={isMobile && !hasSelectedPiece && isOccupied && !isCorrect ? "Tap to retrieve" : undefined}
     />
   );
 }

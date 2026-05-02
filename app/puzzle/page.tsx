@@ -79,14 +79,31 @@ export default function PuzzlePage() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [mounted, setMounted] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [selectedPiece, setSelectedPiece] = useState<number | null>(null);
 
   useEffect(() => {
     dispatch({ type: "RESET" });
     setMounted(true);
+    // Detect touch device
+    setIsMobile(window.matchMedia("(pointer: coarse)").matches);
   }, []);
 
   const completed = mounted && state.board.every((val, idx) => val === idx);
 
+  // Mobile: tap a tray piece to select/deselect it
+  const handleTapPiece = useCallback((pieceIndex: number) => {
+    setSelectedPiece((prev) => (prev === pieceIndex ? null : pieceIndex));
+  }, []);
+
+  // Mobile: tap a board slot to place selected piece
+  const handleTapSlot = useCallback((slotIndex: number) => {
+    if (selectedPiece === null) return;
+    dispatch({ type: "PLACE", pieceIndex: selectedPiece, boardSlot: slotIndex });
+    setSelectedPiece(null);
+  }, [selectedPiece]);
+
+  // Desktop: drag and drop
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) return;
@@ -97,13 +114,15 @@ export default function PuzzlePage() {
   }, []);
 
   return (
-    <DndContext onDragEnd={handleDragEnd}>
+    <DndContext id="puzzle-dnd" onDragEnd={handleDragEnd}>
       <main className="min-h-screen bg-gray-950 text-white flex flex-col items-center py-10 px-4">
         <h1 className="text-3xl font-bold text-yellow-400 mb-1">
           Angkor Wat Puzzle
         </h1>
-        <p className="text-gray-400 mb-4">
-          Drag pieces onto the board. Click a wrong piece to retrieve it.
+        <p className="text-gray-400 mb-4 text-center text-sm">
+          {isMobile
+            ? "Tap a piece, then tap a slot to place it"
+            : "Drag pieces onto the board. Click a wrong piece to retrieve it."}
         </p>
 
         {/* Preview toggle */}
@@ -125,6 +144,13 @@ export default function PuzzlePage() {
           )}
         </div>
 
+        {/* Mobile: selected piece indicator */}
+        {isMobile && selectedPiece !== null && (
+          <p className="text-yellow-400 text-sm mb-3 animate-pulse">
+            Piece selected — tap a slot to place it
+          </p>
+        )}
+
         {/* Board */}
         <div
           className="grid mb-10"
@@ -140,6 +166,9 @@ export default function PuzzlePage() {
               imageUrl={IMAGE_URL}
               isCorrect={val === i}
               onRetrieve={() => dispatch({ type: "RETRIEVE", slotIndex: i })}
+              isMobile={isMobile}
+              hasSelectedPiece={selectedPiece !== null}
+              onTapSlot={() => handleTapSlot(i)}
             />
           ))}
         </div>
@@ -156,13 +185,16 @@ export default function PuzzlePage() {
                   total={TOTAL}
                   gridSize={GRID_SIZE}
                   imageUrl={IMAGE_URL}
+                  isMobile={isMobile}
+                  isSelected={selectedPiece === p}
+                  onTap={() => handleTapPiece(p)}
                 />
               )
           )}
         </div>
 
         <button
-          onClick={() => dispatch({ type: "RESET" })}
+          onClick={() => { dispatch({ type: "RESET" }); setSelectedPiece(null); }}
           className="mt-6 bg-yellow-500 text-black px-6 py-2 rounded-lg font-bold hover:bg-yellow-400 transition"
         >
           Reset Puzzle
